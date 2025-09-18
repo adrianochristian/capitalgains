@@ -1,35 +1,17 @@
-import { Money } from '../values/money.js';
-import { Quantity } from '../values/quantity.js';
-
 export class Portfolio {
   #quantity;
   #averageCost;
   #accumulatedLoss;
-
-  constructor({ quantity = null, averageCost = Money.zero(), accumulatedLoss = Money.zero() }) {
-    if (quantity !== null && !(quantity instanceof Quantity)) {
-      throw new Error('Quantity must be a Quantity instance or null');
-    }
-    if (!(averageCost instanceof Money)) {
-      throw new Error('Average cost must be a Money instance');
-    }
-    if (!(accumulatedLoss instanceof Money)) {
-      throw new Error('Accumulated loss must be a Money instance');
-    }
-    if (quantity === null && !averageCost.isZero()) {
-      throw new Error('Average cost must be zero when quantity is null');
-    }
-
+  constructor({ quantity = null, averageCost = 0, accumulatedLoss = 0 }) {
     this.#quantity = quantity;
     this.#averageCost = averageCost;
     this.#accumulatedLoss = accumulatedLoss;
   }
-
   static empty() {
     return new Portfolio({
       quantity: null,
-      averageCost: Money.zero(),
-      accumulatedLoss: Money.zero()
+      averageCost: 0,
+      accumulatedLoss: 0
     });
   }
 
@@ -51,19 +33,12 @@ export class Portfolio {
 
   getTotalValue() {
     if (!this.hasPosition()) {
-      return Money.zero();
+      return 0;
     }
-    return this.#averageCost.multiply(this.#quantity.getValue());
+    return this.#averageCost * this.#quantity;
   }
 
   addPosition(addedQuantity, unitPrice) {
-    if (!(addedQuantity instanceof Quantity)) {
-      throw new Error('Added quantity must be a Quantity instance');
-    }
-    if (!(unitPrice instanceof Money)) {
-      throw new Error('Unit price must be a Money instance');
-    }
-
     if (!this.hasPosition()) {
       return new Portfolio({
         quantity: addedQuantity,
@@ -73,10 +48,10 @@ export class Portfolio {
     }
 
     const currentValue = this.getTotalValue();
-    const addedValue = unitPrice.multiply(addedQuantity.getValue());
-    const totalValue = currentValue.add(addedValue);
-    const newQuantity = this.#quantity.add(addedQuantity);
-    const newAverageCost = totalValue.divide(newQuantity.getValue());
+    const addedValue = unitPrice * addedQuantity;
+    const totalValue = currentValue + addedValue;
+    const newQuantity = this.#quantity + addedQuantity;
+    const newAverageCost = totalValue / newQuantity;
 
     return new Portfolio({
       quantity: newQuantity,
@@ -86,25 +61,15 @@ export class Portfolio {
   }
 
   removePosition(soldQuantity) {
-    if (!(soldQuantity instanceof Quantity)) {
-      throw new Error('Sold quantity must be a Quantity instance');
-    }
-    if (!this.hasPosition()) {
-      throw new Error('Cannot sell from empty position');
-    }
-    if (soldQuantity.isGreaterThan(this.#quantity)) {
-      throw new Error('Cannot sell more than current position');
-    }
-
-    if (soldQuantity.equals(this.#quantity)) {
+    if (soldQuantity === this.#quantity) {
       return new Portfolio({
         quantity: null,
-        averageCost: Money.zero(),
+        averageCost: 0,
         accumulatedLoss: this.#accumulatedLoss
       });
     }
 
-    const newQuantity = this.#quantity.subtract(soldQuantity);
+    const newQuantity = this.#quantity - soldQuantity;
     return new Portfolio({
       quantity: newQuantity,
       averageCost: this.#averageCost,
@@ -113,42 +78,27 @@ export class Portfolio {
   }
 
   getCostBasis(quantity) {
-    if (!(quantity instanceof Quantity)) {
-      throw new Error('Quantity must be a Quantity instance');
-    }
-    if (!this.hasPosition()) {
-      throw new Error('Cannot calculate cost basis for empty position');
-    }
-    if (quantity.isGreaterThan(this.#quantity)) {
-      throw new Error('Quantity exceeds current position');
-    }
-    return this.#averageCost.multiply(quantity.getValue());
+    return this.#averageCost * quantity;
   }
 
   addLoss(loss) {
-    if (!(loss instanceof Money)) {
-      throw new Error('Loss must be a Money instance');
-    }
     return new Portfolio({
       quantity: this.#quantity,
       averageCost: this.#averageCost,
-      accumulatedLoss: this.#accumulatedLoss.add(loss)
+      accumulatedLoss: this.#accumulatedLoss + loss
     });
   }
 
   compensateLoss(compensation) {
-    if (!(compensation instanceof Money)) {
-      throw new Error('Compensation must be a Money instance');
+    if (this.#accumulatedLoss === 0) {
+      return { portfolio: this, compensated: 0 };
     }
-    if (this.#accumulatedLoss.isZero()) {
-      return { portfolio: this, compensated: Money.zero() };
-    }
-    if (compensation.isLessOrEqualTo(this.#accumulatedLoss)) {
+    if (compensation <= this.#accumulatedLoss) {
       return {
         portfolio: new Portfolio({
           quantity: this.#quantity,
           averageCost: this.#averageCost,
-          accumulatedLoss: this.#accumulatedLoss.subtract(compensation)
+          accumulatedLoss: this.#accumulatedLoss - compensation
         }),
         compensated: compensation
       };
@@ -157,7 +107,7 @@ export class Portfolio {
       portfolio: new Portfolio({
         quantity: this.#quantity,
         averageCost: this.#averageCost,
-        accumulatedLoss: Money.zero()
+        accumulatedLoss: 0
       }),
       compensated: this.#accumulatedLoss
     };
@@ -172,17 +122,13 @@ export class Portfolio {
   }
 
   equals(other) {
-    if (!(other instanceof Portfolio)) {
-      return false;
-    }
-    const bothNull = this.#quantity === null && other.#quantity === null;
-    const bothHave = this.#quantity !== null && other.#quantity !== null;
-    const qtyEq = bothNull || (bothHave && this.#quantity.equals(other.#quantity));
-    return qtyEq && this.#averageCost.equals(other.#averageCost) && this.#accumulatedLoss.equals(other.#accumulatedLoss);
+    if (!(other instanceof Portfolio)) return false;
+    const qtyEq = this.#quantity === other.#quantity;
+    return qtyEq && this.#averageCost === other.#averageCost && this.#accumulatedLoss === other.#accumulatedLoss;
   }
 
   toString() {
-    const qty = this.#quantity ? this.#quantity.toString() : 'empty';
+    const qty = this.#quantity ?? 'empty';
     return `Portfolio(${qty} @ ${this.#averageCost}, loss: ${this.#accumulatedLoss})`;
   }
 }

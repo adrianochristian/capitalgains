@@ -16,46 +16,13 @@ export class CapitalGainsCLI {
 
   async run() {
     try {
-      const isInteractive = process.stdin.isTTY && process.argv.length === 2;
-      
-      if (isInteractive) {
-        await this.runInteractiveMode();
-      } else {
-        await this.runBatchMode();
-      }
+      const lines = await this.#readline.readAllLines();
+      if (lines.length === 0) return;
+      const outputs = this.#useCase.execute(lines);
+      for (const output of outputs) this.writeOutput(output);
     } catch (error) {
       this.handleFatalError(error);
       process.exit(1);
-    }
-  }
-
-  async runInteractiveMode() {
-    await this.#readline.readLinesWithCallback((line) => {
-      this.processLine(line);
-    });
-  }
-
-  async runBatchMode() {
-    const lines = await this.#readline.readAllLines();
-    
-    if (lines.length === 0) {
-      return;
-    }
-
-    const outputs = this.#useCase.execute(lines);
-    for (const output of outputs) {
-      this.writeOutput(output);
-    }
-  }
-
-  processLine(line) {
-    try {
-      const outputs = this.#useCase.execute([line]);
-      if (outputs.length > 0) {
-        this.writeOutput(outputs[0]);
-      }
-    } catch (error) {
-      this.handleProcessingError(error, line);
     }
   }
 
@@ -67,19 +34,7 @@ export class CapitalGainsCLI {
     process.stderr.write(`Error: ${message}\n`);
   }
 
-  handleProcessingError(error, line) {
-    this.writeError(`Failed to process line: ${line}`);
-    this.writeError(error.message);
-    
-    const errorResponse = JSON.stringify([{
-      error: {
-        code: 'INTERNAL_ERROR',
-        message: error.message,
-        details: {}
-      }
-    }]);
-    this.writeOutput(errorResponse);
-  }
+  
 
   handleFatalError(error) {
     this.writeError('Fatal application error occurred');
