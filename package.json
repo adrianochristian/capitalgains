@@ -1,0 +1,51 @@
+{
+  "name": "capital-gains-cli",
+  "version": "1.0.0",
+  "description": "CLI for calculating capital gains tax on stock operations",
+  "type": "module",
+  "main": "src/infra/cli/cli.js",
+  "bin": {
+    "capital-gains": "./bin/capital-gains"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node ./bin/capital-gains",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
+    "coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage --runInBand"
+  },
+  "keywords": [
+    "capital-gains",
+    "tax",
+    "cli",
+    "nodejs",
+    "finance"
+  ],
+  "author": "Adriano Christian",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {},
+    "collectCoverage": true,
+    "coverageDirectory": "coverage",
+    "coverageReporters": ["text", "lcov", "html"],
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/infra/**",
+      "!src/app/run-simulation.usecase.js",
+      "!bin/**"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "statements": 100,
+        "branches": 100,
+        "functions": 100,
+        "lines": 100
+      }
+    }
+  }
+}

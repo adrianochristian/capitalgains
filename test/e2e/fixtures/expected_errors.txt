@@ -1,0 +1,3 @@
+[{"error":{"code":"INVALID_OPERATION_TYPE","message":"Invalid operation type: invalid. Must be 'buy' or 'sell'","details":{"value":"invalid","validTypes":["buy","sell"],"index":0}}}]
+[{"error":{"code":"NON_FINITE_UNIT_COST","message":"Unit cost must be a finite number: null","details":{"value":null,"index":0}}}]
+[{"error":{"code":"NEGATIVE_OR_ZERO_QUANTITY","message":"Quantity must be positive: -1000","details":{"value":-1000,"index":0}}}]
