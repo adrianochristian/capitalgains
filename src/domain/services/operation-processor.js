@@ -1,12 +1,10 @@
 export class OperationProcessor {
   processBuy(operation, portfolio) {
-    const tradeValue = operation.getTradeValue();
     const newPortfolio = portfolio.addPosition(operation.getQuantity(), operation.getUnitPrice());
-    const grossProfit = 0;
-    return { portfolio: newPortfolio, tradeValue, grossProfit };
+    return { portfolio: newPortfolio };
   }
 
-  processSell(operation, portfolio, index) {
+  processSell(operation, portfolio) {
     const costBasis = portfolio.getCostBasis(operation.getQuantity());
     const tradeValue = operation.getTradeValue();
     const grossProfit = tradeValue - costBasis;

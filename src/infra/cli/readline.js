@@ -5,7 +5,6 @@ export class ReadlineUtils {
     
     const readlineInterface = createInterface({
       input: process.stdin,
-      output: process.stdout,
       terminal: false
     });
 
@@ -23,10 +22,6 @@ export class ReadlineUtils {
 
       readlineInterface.on('error', (error) => {
         reject(error);
-      });
-
-      process.stdin.on('end', () => {
-        readlineInterface.close();
       });
     });
   }

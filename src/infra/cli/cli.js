@@ -1,16 +1,14 @@
 #!/usr/bin/env node
 
-import { RunSimulationUseCase } from '../../app/run-simulation.usecase.js';
+import { ProcessTransactionsUseCase } from '../../app/process-transactions.usecase.js';
 import { ReadlineUtils } from './readline.js';
-import { OutputMapper } from '../../app/mappers/output.mapper.js';
 
 export class CapitalGainsCLI {
   #useCase;
   #readline;
 
   constructor() {
-    const outputMapper = new OutputMapper();
-    this.#useCase = new RunSimulationUseCase({ outputMapper });
+    this.#useCase = new ProcessTransactionsUseCase();
     this.#readline = new ReadlineUtils();
   }
 

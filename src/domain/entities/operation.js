@@ -26,7 +26,4 @@ export class Operation {
   isSell() {
     return this.#type === 'sell';
   }
-  toString() {
-    return `Operation(${this.#type} ${this.#quantity} @ ${this.#unitPrice})`;
-  }
 }

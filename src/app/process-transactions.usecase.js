@@ -1,7 +1,7 @@
 import { CapitalGainsEngine } from '../domain/services/capital-gains-engine.js';
 import { InputMapper } from './mappers/input.mapper.js';
 import { OutputMapper } from './mappers/output.mapper.js';
-export class RunSimulationUseCase {
+export class ProcessTransactionsUseCase {
   #inputMapper;
 
   #outputMapper;
@@ -12,11 +12,11 @@ export class RunSimulationUseCase {
   }
 
   execute(inputLines) {
-    const results = inputLines.map((line) => this.executeSingleSimulation(line));
-    return this.#outputMapper.mapMultipleSimulations(results);
+    const results = inputLines.map((line) => this.processSingleLine(line));
+    return this.#outputMapper.mapMultipleLines(results);
   }
-  executeSingleSimulation(inputLine) {
-    const operations = this.#inputMapper.parseAndMapOperations(inputLine);
+  processSingleLine(inputLine) {
+    const operations = this.#inputMapper.parseLineToOperations(inputLine);
     const engine = new CapitalGainsEngine();
     return engine.run(operations);
   }

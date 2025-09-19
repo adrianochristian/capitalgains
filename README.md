@@ -1,6 +1,6 @@
 # Capital Gains CLI
 
-CLI em Node.js para calcular imposto sobre ganhos de capital em operações de compra e venda de ações. A aplicação lê operações em JSON a partir da stdin (uma simulação por linha) e escreve o resultado (imposto por operação) na stdout.
+CLI em Node.js para calcular imposto sobre ganhos de capital em operações de compra e venda de ações. A aplicação lê, a cada linha da stdin, um array JSON de operações reais e escreve o resultado (imposto por operação) na stdout.
 
 ## Requisitos
 - Node.js >= 20 (ESM habilitado)
@@ -9,7 +9,6 @@ CLI em Node.js para calcular imposto sobre ganhos de capital em operações de c
 ## Instalação
 ```bash
 npm install
-# Opcional: expor o comando globalmente durante o desenvolvimento
 npm link
 ```
 
@@ -40,9 +39,6 @@ Crie a imagem e rode o CLI lendo da stdin (ideal para pipes):
 # Build
 docker build -t capital-gains .
 
-# Interativo/piped
-echo '[{"operation":"buy","unit-cost":10.00,"quantity":1000}]' | docker run --rm -i capital-gains
-
 # Lendo de arquivo local
 cat cases/operations.txt | docker run --rm -i capital-gains > out.txt
 ```
@@ -53,10 +49,9 @@ Observações:
 
 ### Formato de Saída
 - Sucesso: `{ tax: number }`
-- Erro: `{ error: { code, message, details } }`
 
 ### Entrada e Saída
-- Cada linha de entrada é um array JSON de operações; cada item tem os campos:
+- Cada linha de entrada é um array JSON de operações reais; cada item tem os campos:
   - `operation`: "buy" | "sell"
   - `unit-cost`: número (preço unitário)
   - `quantity`: número inteiro > 0
@@ -72,46 +67,40 @@ Exemplo de saída correspondente:
 ```
 
 ### Erros
-Quando ocorre erro de domínio/validação, a saída da linha é um array com um único objeto de erro:
-```json
-[{"error":{"code":"SELL_EXCEEDS_POSITION","message":"Cannot sell 2000 units. Only 1000 units available","details":{"requested":2000,"available":1000}}}]
-```
-
-Principais códigos de erro:
-- `MISSING_FIELD`, `INVALID_OPERATION_TYPE`, `NON_FINITE_UNIT_COST`, `NEGATIVE_OR_ZERO_QUANTITY`, `SELL_EXCEEDS_POSITION`, `EMPTY_INPUT`, `INVALID_JSON`, `INTERNAL_ERROR`.
+- Assumimos entradas válidas. A aplicação não produz payloads de erro estruturados na saída.
 
 ## Regras de Tributação (implementadas)
 - Compra: não há imposto; atualiza a posição e o custo médio ponderado.
 - Venda: calcula lucro/prejuízo com base no custo médio.
 - Prejuízo: acumula para compensar lucros futuros.
-- Isenção por operação: se o valor total negociado na venda ≤ R$ 20.000, o imposto é 0.
-- Alíquota: 20% sobre o lucro tributável (após compensação de prejuízo) quando a venda excede R$ 20.000.
+- Isenção por operação: se o valor total negociado na venda ≤ 20.000, o imposto é 0.
+- Alíquota: 20% sobre o lucro tributável (após compensação de prejuízo) quando a venda excede 20.000.
 
-Observação: em vendas isentas (valor negociado ≤ R$ 20.000), o imposto é 0 e o prejuízo acumulado NÃO é consumido. A compensação de prejuízo só ocorre em vendas tributáveis (valor negociado > R$ 20.000).
+Observação: em vendas isentas (valor negociado ≤ 20.000), o imposto é 0 e o prejuízo acumulado NÃO é consumido. A compensação de prejuízo só ocorre em vendas tributáveis (valor negociado > 20.000).
 
 ## Como Rodar os Testes
+O projeto mantém a configuração de testes com Jest. A suíte será recriada; por ora pode estar vazia.
 ```bash
-npm test         # executa unit, integration e e2e
-npm run coverage # executa testes + cobertura (lcov/html)
+npm test         # executa testes quando existirem
+npm run coverage # executa cobertura
 ```
-
-Estrutura de testes:
-- Unit: objetos de valor, entidades, políticas, serviços de domínio
-- Integration: orquestração do use case e mapeadores
-- E2E: CLI real lendo stdin e escrevendo stdout
-
-Cobertura:
-- 100% em statements/branches/functions/lines nos módulos coletados (domínio, serviços, valores, políticas e mapeadores).
-- A orquestração (`src/app/run-simulation.usecase.js`) e a infra de CLI são verificadas por testes de integração/E2E e não entram na coleta (config em `package.json`).
-
-Relatório HTML: após `npm run coverage`, abra `coverage/index.html`.
+Relatório HTML (quando houver testes): após `npm run coverage`, abra `coverage/index.html`.
 
 ## Arquitetura (resumo)
-- Camadas: `infra` (CLI) → `app` (use case/mapeadores) → `domain` (entidades, VOs, políticas, serviços)
-- Padrões: DDD, Use Case, Strategy (políticas), Result (Ok/Err), Imutabilidade, Money/Quantity como VOs com BigInt
-- Serviços principais: `OperationProcessor` (aplica operação e calcula PnL bruto), `TaxCalculator` (compensação e imposto), `TaxSimulator` (fachada/estado do portfólio).
+- Camadas: `infra` (CLI) → `app` (use case/mapeadores) → `domain` (entidades, políticas, serviços) com tipos primitivos.
+- Padrões: Use Case, Strategy para políticas, Engine stateful para orquestração.
+- Serviços: `OperationProcessor`, `TaxCalculator`, `CapitalGainsEngine`.
 
 Detalhes completos em `docs/ARQUITETURA.md`.
 
-## Licença
-MIT — veja `LICENSE`.
+## Decisões Técnicas
+- Simplicidade: uso de tipos primitivos para valores monetários e quantidades; remoção de objetos de valor e do padrão Result/DomainError.
+- Elegância: separação clara de camadas; nomes descritivos (`CapitalGainsEngine`, `TaxAssessment`).
+- Operacional: foco em stdin/stdout em modo batch; entradas assumidas válidas.
+
+## Bibliotecas/Frameworks
+- Runtime: Node.js (ESM). Sem dependências externas no runtime.
+- Testes: Jest (dev-only), configurado em `package.json`.
+
+## Notas Adicionais
+- A engine (`CapitalGainsEngine`) mantém estado de portfólio por linha processada.

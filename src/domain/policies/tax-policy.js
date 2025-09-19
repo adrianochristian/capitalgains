@@ -5,22 +5,15 @@ export class TaxPolicy {
   calculateTax(profit, tradeValue) {
     if (profit <= 0) return 0;
     if (tradeValue <= TaxPolicy.EXEMPTION_THRESHOLD) return 0;
-    return profit * TaxPolicy.TAX_RATE;
+    return this.roundMoney(profit * TaxPolicy.TAX_RATE);
   }
 
-  getName() {
-    return 'TaxPolicy';
+  isTaxableTrade(tradeValue) {
+    return tradeValue > TaxPolicy.EXEMPTION_THRESHOLD;
   }
 
-  getExemptionThreshold() {
-    return TaxPolicy.EXEMPTION_THRESHOLD;
-  }
-
-  getTaxRate() {
-    return TaxPolicy.TAX_RATE;
-  }
-
-  toString() {
-    return `${this.getName()}(exemption: ${this.getExemptionThreshold()}, rate: ${this.getTaxRate() * 100}%)`;
+  roundMoney(amount) {
+    if (!Number.isFinite(amount)) return 0;
+    return Math.round((amount + Number.EPSILON) * 100) / 100;
   }
 }

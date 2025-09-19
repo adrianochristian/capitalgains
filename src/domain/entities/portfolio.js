@@ -2,14 +2,14 @@ export class Portfolio {
   #quantity;
   #averageCost;
   #accumulatedLoss;
-  constructor({ quantity = null, averageCost = 0, accumulatedLoss = 0 }) {
+  constructor({ quantity = 0, averageCost = 0, accumulatedLoss = 0 }) {
     this.#quantity = quantity;
     this.#averageCost = averageCost;
     this.#accumulatedLoss = accumulatedLoss;
   }
   static empty() {
     return new Portfolio({
-      quantity: null,
+      quantity: 0,
       averageCost: 0,
       accumulatedLoss: 0
     });
@@ -28,13 +28,10 @@ export class Portfolio {
   }
 
   hasPosition() {
-    return this.#quantity !== null;
+    return this.#quantity > 0;
   }
 
   getTotalValue() {
-    if (!this.hasPosition()) {
-      return 0;
-    }
     return this.#averageCost * this.#quantity;
   }
 
@@ -61,9 +58,12 @@ export class Portfolio {
   }
 
   removePosition(soldQuantity) {
+    if (!this.hasPosition() || soldQuantity > this.#quantity) {
+      throw new Error(`Cannot sell ${soldQuantity} units: available ${this.#quantity}`);
+    }
     if (soldQuantity === this.#quantity) {
       return new Portfolio({
-        quantity: null,
+        quantity: 0,
         averageCost: 0,
         accumulatedLoss: this.#accumulatedLoss
       });
@@ -113,22 +113,5 @@ export class Portfolio {
     };
   }
 
-  withChanges({ quantity, averageCost, accumulatedLoss }) {
-    return new Portfolio({
-      quantity: quantity !== undefined ? quantity : this.#quantity,
-      averageCost: averageCost ?? this.#averageCost,
-      accumulatedLoss: accumulatedLoss ?? this.#accumulatedLoss
-    });
-  }
-
-  equals(other) {
-    if (!(other instanceof Portfolio)) return false;
-    const qtyEq = this.#quantity === other.#quantity;
-    return qtyEq && this.#averageCost === other.#averageCost && this.#accumulatedLoss === other.#accumulatedLoss;
-  }
-
-  toString() {
-    const qty = this.#quantity ?? 'empty';
-    return `Portfolio(${qty} @ ${this.#averageCost}, loss: ${this.#accumulatedLoss})`;
-  }
+  
 }

@@ -13,7 +13,12 @@
   "scripts": {
     "start": "node ./bin/capital-gains",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
-    "coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage --runInBand"
+    "coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage --runInBand",
+    "test:cli": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand test/e2e/cli.test.js",
+    "test:usecase": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand test/unit/app/usecase.test.js",
+    "test:domain": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand test/unit/domain/**/*.test.js",
+    "test:integration": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand test/integration/**/*.test.js",
+    "test:nocache": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand --no-cache"
   },
   "keywords": [
     "capital-gains",
@@ -36,7 +41,6 @@
     "collectCoverageFrom": [
       "src/**/*.js",
       "!src/infra/**",
-      "!src/app/run-simulation.usecase.js",
       "!bin/**"
     ],
     "coverageThreshold": {
